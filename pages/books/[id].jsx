@@ -1,46 +1,30 @@
 import Link from "next/link";
 export async function getStaticPaths() {
-  const paths = Array.from({ length: 10 }, (_, i) => ({
-    params: { id: (i + 1).toString() },
-  }));
+  const res = await fetch("https://fakerestapi.azurewebsites.net/api/v1/Books");
+  const data = await res.json();
+  const paths = data.map((book) => {
+    return {
+      params: { id: book.id.toString() },
+    };
+  });
 
   return { paths, fallback: false };
 }
 
 export async function getStaticProps({ params }) {
   const { id } = params;
-
-  try {
-    const response = await fetch(`https://fakerestapi.azurewebsites.net/api/v1/Books/${id}`);
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        return {
-          notFound: true,
-        };
-      }
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    return {
-      props: {
-        books: data,
-      },
-      revalidate: 10, 
-    };
-    
-  } catch (error) {
-    console.error("Error fetching book:", error);
-  }
+  const response = await fetch(
+    `https://fakerestapi.azurewebsites.net/api/v1/Books/${id}`
+  );
+  const book = await response.json();
+  return {
+    props: {
+      books: book,
+    },
+  };
 }
 
-export default function BookDetails({ books, error }) {
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
+export default function BookDetails({ books }) {
   return (
     <div className="book-details">
       <h1>Book Details</h1>
@@ -50,8 +34,7 @@ export default function BookDetails({ books, error }) {
       <p>Publish Date : {books.publishDate}</p>
       <Link href={"/"}>
         <button>Back</button>
-        </Link>
+      </Link>
     </div>
-
   );
 }
